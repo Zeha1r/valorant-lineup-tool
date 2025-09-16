@@ -1,13 +1,3 @@
-# Valorant Lineup Script
-# Version 1.0
-# Author: Simonrye
-# GitHub: https://github.com/Simonrye/valorant-lineup-tool/
-# License: Creative Commons Zero v1.0 Universal
-
-# Please read the entire README.md file for instructions and usage guidelines.
-# Use this script responsibly and only in custom games.
-# Respect the game's terms of service and fair play rules.
-# Remember that third-party scripts are not officially endorsed by Valorant.
 
 from pynput import keyboard, mouse
 from pynput.mouse import Button, Controller
@@ -52,6 +42,7 @@ with open(settings_file, 'r') as file:
         
         unplanted_rgb = data['unplanted_spike_rgb']
         planted_rgb = data['planted_spike_rgb']
+        alert_rgb = data['alert_ping_rgb']
         tolerance = data['tolerance']
         XFILE = data['x_file']
         DOTFILE = data['dot_file']
@@ -74,6 +65,7 @@ with open(settings_file, 'r') as file:
         
         unplanted_rgb = [219, 230, 3]
         planted_rgb = [248, 188, 0]
+        alert_rgb = [255, 3, 96]
         tolerance = 12
         XFILE = 'overlays/violet_x.png'
         DOTFILE = 'overlays/red_dot.png'
@@ -142,11 +134,14 @@ while True:
 Select mode:
 1. Unplanted spike
 2. Planted spike
+3. Alert Ping
 ''').strip()
-    if choice in ('1', '2'):
+    if choice in ('1', '2', '3', '4'):
         target_color = {
             '1': unplanted_rgb,
-            '2': planted_rgb
+            '2': planted_rgb,
+            '3': alert_rgb,
+            '4': alert_rgb  
         }[choice]
         break
 
@@ -158,13 +153,29 @@ print('Script initiated.')
 def find_all_pixels_with_tolerance(target_color, tolerance, region_top_left, region_bottom_right):
     screen = pyautogui.screenshot(region=(region_top_left[0], region_top_left[1], region_bottom_right[0] - region_top_left[0], region_bottom_right[1] - region_top_left[1]))    
     matches = []
-    for x in range(screen.width):
-        for y in range(screen.height):
-            pixel_color = screen.getpixel((x, y))
-            if all(abs(pixel_color[i] - target_color[i]) <= tolerance for i in range(3)):
-                matches.append((x + region_top_left[0], y + region_top_left[1]))
+    repeat = 9
+    if target_color == [255, 3, 96]:
+        repeat = 0
+        
+        screen = pyautogui.screenshot(region=(region_top_left[0], region_top_left[1], region_bottom_right[0] - region_top_left[0], region_bottom_right[1] - region_top_left[1]))
+        for x in range(screen.width):
+            for y in range(screen.height):
+                pixel_color = screen.getpixel((x, y))
+                if all(abs(pixel_color[i] - planted_rgb[i]) <= tolerance for i in range(3)):
+                    matches.append((x + region_top_left[0], y + region_top_left[1]))
+    if len(matches) >> 0:
+          return matches
+    for reapeat in range(10):
+        screen = pyautogui.screenshot(region=(region_top_left[0], region_top_left[1], region_bottom_right[0] - region_top_left[0], region_bottom_right[1] - region_top_left[1]))
+        for x in range(screen.width):
+            for y in range(screen.height):
+                pixel_color = screen.getpixel((x, y))
+                repeat += 1
+                if all(abs(pixel_color[i] - target_color[i]) <= tolerance for i in range(3)):
+                    matches.append((x + region_top_left[0], y + region_top_left[1]))
+                
     return matches
-
+        
 
 def calculate_average_coordinates(matches):
     if not matches:
